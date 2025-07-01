@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MCP Folder Manager</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div id="sidebar">
+    <h3>📁 Files in Folder</h3>
+    <ul id="fileList"></ul>
+  </div>
+
+  <div id="main">
+    <h2>📁 Upload Folder</h2>
+    <input type="file" id="folderInput" webkitdirectory multiple />
+    <input type="text" id="folderName" placeholder="Enter folder name (e.g. project1)" />
+    <button onclick="uploadFolder()">Upload Folder</button>
+
+    <hr />
+
+    <h2>📄 Manage Files</h2>
+    <input type="text" id="targetFolder" placeholder="Enter folder name (e.g. project1)" />
+    <button onclick="listFiles()">List Files</button>
+
+    <input type="text" id="fileName" placeholder="File path (e.g. src/main.py)" />
+    <textarea id="fileContent" placeholder="File content..."></textarea>
+
+    <button onclick="createFile()">Create File</button>
+    <button onclick="editFile()">Edit File</button>
+    <button onclick="deleteFile()">Delete File</button>
+  </div>
+
+  <script>
+    const API = "http://localhost:5000";
+
+    async function uploadFolder() {
+      const folderInput = document.getElementById("folderInput");
+      const folderName = document.getElementById("folderName").value.trim();
+      if (!folderName || folderInput.files.length === 0) {
+        alert("Please select a folder and enter a folder name.");
+        return;
+      }
+
+      const formData = new FormData();
+      for (let file of folderInput.files) {
+        formData.append("files", file, file.webkitRelativePath);
+      }
+      formData.append("folder", folderName);
+
+      try {
+        const res = await fetch(`${API}/upload`, {
+          method: "POST",
+          body: formData,
+        });
+        const result = await res.json();
+        alert(result.status || result.error);
+      } catch (e) {
+        alert("Upload failed: " + e.message);
+      }
+    }
+
+    async function listFiles() {
+      const folder = document.getElementById("targetFolder").value.trim();
+      if (!folder) {
+        alert("Please enter the folder name to list files.");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/list`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folder }),
+        });
+        const data = await res.json();
+        const list = document.getElementById("fileList");
+        list.innerHTML = "";
+
+        if (data.files) {
+          data.files.forEach((file) => {
+            const li = document.createElement("li");
+            li.textContent = file;
+            li.onclick = () => loadFile(folder, file);
+            list.appendChild(li);
+          });
+        } else {
+          alert(data.error);
+        }
+      } catch (e) {
+        alert("Error fetching file list: " + e.message);
+      }
+    }
+
+    async function loadFile(folder, filename) {
+      document.getElementById("fileName").value = filename;
+      document.getElementById("targetFolder").value = folder;
+
+      try {
+        const res = await fetch(`${API}/read`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folder, filename }),
+        });
+        const data = await res.json();
+        if (data.content !== undefined) {
+          document.getElementById("fileContent").value = data.content;
+        } else {
+          alert(data.error);
+          document.getElementById("fileContent").value = "";
+        }
+      } catch (e) {
+        alert("Error loading file content: " + e.message);
+      }
+    }
+
+    async function createFile() {
+      await fileOperation("create");
+      await listFiles();
+    }
+
+    async function editFile() {
+      await fileOperation("edit");
+      await listFiles();
+    }
+
+    async function deleteFile() {
+      const folder = document.getElementById("targetFolder").value.trim();
+      const filename = document.getElementById("fileName").value.trim();
+
+      if (!folder || !filename) {
+        alert("Folder and file name required to delete.");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/delete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folder, filename }),
+        });
+        const result = await res.json();
+        alert(result.status || result.error);
+        await listFiles();
+        document.getElementById("fileContent").value = "";
+        document.getElementById("fileName").value = "";
+      } catch (e) {
+        alert("Error deleting file: " + e.message);
+      }
+    }
+
+    async function fileOperation(endpoint) {
+      const folder = document.getElementById("targetFolder").value.trim();
+      const filename = document.getElementById("fileName").value.trim();
+      const content = document.getElementById("fileContent").value;
+
+      if (!folder || !filename) {
+        alert("Please enter both folder and filename.");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/${endpoint}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folder, filename, content }),
+        });
+        const result = await res.json();
+        alert(result.status || result.error);
+      } catch (e) {
+        alert("Operation failed: " + e.message);
+      }
+    }
+  </script>
+
+</body>
+</html>

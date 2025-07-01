@@ -1,0 +1,41 @@
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  margin: 0;
+  height: 93vh;
+}
+#sidebar {
+  width: 300px;
+  background: #f0f0f0;
+  padding: 50px;
+  border-right: 1px solid #ccc;
+  overflow-y: auto;
+}
+#sidebar h3 {
+  margin-top: 0;
+}
+#fileList li {
+  margin: 6px 0;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+#fileList li:hover {
+  background-color: #ddd;
+}
+#main {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+input, textarea, button {
+  margin: 10px 0;
+  padding: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+textarea {
+  height:80px;
+  font-family: monospace;
+}
