@@ -87,8 +87,3 @@ On your system, this resolves to:
 - Only relative paths allowed
 - All paths are joined with BASE_DIR
 - Directory traversal (../) can be optionally blocked
-
-
-📜 License
-
-MIT License – Free for personal, academic, and commercial use.
